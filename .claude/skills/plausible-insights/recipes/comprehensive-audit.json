@@ -1,0 +1,97 @@
+{
+  "name": "comprehensive-audit",
+  "description": "Full site analysis using parallel subagents for speed and depth",
+  "triggers": ["full audit", "complete analysis", "comprehensive review", "thorough audit", "site audit", "overall performance"],
+  "mode": "parallel_subagents",
+  "subagents": [
+    {
+      "id": "traffic_analyst",
+      "name": "Traffic Analysis",
+      "prompt": "You are analyzing traffic patterns for {site_id}. Run these analyses:\n\n1. Overall Metrics (last 30 days vs previous 30 days):\n   - Visitors, pageviews, bounce rate, visit duration, views per visit\n   - Calculate % changes and identify notable (>15%) or significant (>30%) changes\n\n2. Traffic Sources Breakdown:\n   - Top 10 sources by visitors\n   - Bounce rate and quality metrics by source\n   - Identify best and worst performing sources\n\n3. Growth Trends:\n   - Compare last 7 days vs previous 7 days\n   - Identify if growth is accelerating, stable, or declining\n\nProvide a concise report with:\n- Key findings (3-5 bullet points)\n- Traffic quality assessment\n- Top opportunities",
+      "queries_needed": [
+        "Overall metrics: 30d current and previous",
+        "Traffic sources with bounce rates",
+        "Weekly trend comparison"
+      ]
+    },
+    {
+      "id": "content_analyst",
+      "name": "Content Performance",
+      "prompt": "You are analyzing content performance for {site_id}. Run these analyses:\n\n1. Top Performers (last 30 days):\n   - Top 20 pages by visitors\n   - Engagement metrics: bounce rate, time on page\n   - Identify what makes top content successful\n\n2. Problem Pages:\n   - Pages with >100 visitors and >80% bounce rate\n   - Pages with <20 seconds time on page\n   - High-traffic, low-engagement pages\n\n3. Entry Page Analysis:\n   - Top 15 entry pages\n   - Entry page quality (bounce, duration)\n   - SEO landing page effectiveness\n\nProvide a concise report with:\n- Best performing content (and why)\n- Problem pages requiring attention\n- Content optimization opportunities",
+      "queries_needed": [
+        "Top pages by visitors with engagement metrics",
+        "High bounce pages (filtered)",
+        "Entry pages with quality metrics"
+      ]
+    },
+    {
+      "id": "engagement_analyst",
+      "name": "User Engagement",
+      "prompt": "You are analyzing user engagement patterns for {site_id}. Run these analyses:\n\n1. Engagement by Source:\n   - Bounce rate by traffic source\n   - Visit duration by source\n   - Views per visit by source\n   - Identify which sources bring quality traffic\n\n2. Engagement Trends:\n   - Compare engagement metrics: 30d current vs previous\n   - Identify improving or declining patterns\n\n3. User Journey Quality:\n   - Overall views per visit (should be >2)\n   - Average visit duration (should be >90s for blogs)\n   - Bounce rate assessment (blog: 60-70%, landing pages: <50%)\n\nProvide a concise report with:\n- Engagement health assessment\n- Best and worst quality sources\n- Navigation and internal linking opportunities",
+      "queries_needed": [
+        "Engagement metrics by source",
+        "30-day engagement trends",
+        "User journey metrics"
+      ]
+    },
+    {
+      "id": "technical_analyst",
+      "name": "Technical & Device Analysis",
+      "prompt": "You are analyzing technical performance for {site_id}. Run these analyses:\n\n1. Device Performance:\n   - Desktop vs Mobile visitors, bounce rates\n   - Identify device-specific issues (mobile bounce >10% higher = UX problem)\n\n2. Browser/Platform Issues:\n   - Check if specific browsers have unusually high bounce\n   - Identify technical compatibility issues\n\n3. Geographic Performance (if significant international traffic):\n   - Top countries/regions\n   - Quality differences by location\n\nProvide a concise report with:\n- Technical issues identified\n- Device-specific problems\n- Recommendations for technical improvements",
+      "queries_needed": [
+        "Device breakdown with metrics",
+        "Browser performance (if available)",
+        "Geographic distribution"
+      ]
+    }
+  ],
+  "synthesis": {
+    "title": "Comprehensive Site Audit",
+    "sections": [
+      {
+        "name": "Executive Summary",
+        "content": "Synthesize 3-5 most important findings across all reports"
+      },
+      {
+        "name": "Traffic Health",
+        "content": "From traffic_analyst report"
+      },
+      {
+        "name": "Content Performance",
+        "content": "From content_analyst report"
+      },
+      {
+        "name": "Engagement Quality",
+        "content": "From engagement_analyst report"
+      },
+      {
+        "name": "Technical Issues",
+        "content": "From technical_analyst report"
+      },
+      {
+        "name": "Priority Actions",
+        "content": "Ranked list of 5-7 specific actions with impact/effort assessment:\n- Critical (do now)\n- High priority (this week)\n- Medium priority (this month)"
+      }
+    ]
+  },
+  "interpretation": {
+    "cross_analysis": [
+      {
+        "condition": "traffic growing but engagement declining",
+        "insight": "Lower quality traffic sources - review new sources and consider filtering"
+      },
+      {
+        "condition": "high bounce on mobile but not desktop",
+        "insight": "Mobile UX issues - test mobile experience, page speed, responsive design"
+      },
+      {
+        "condition": "top pages have high bounce despite good traffic",
+        "insight": "Content-conversion gap - add CTAs, internal links, related content"
+      },
+      {
+        "condition": "organic traffic declining",
+        "insight": "SEO issue - check rankings, review technical SEO, analyze entry pages"
+      }
+    ]
+  }
+}

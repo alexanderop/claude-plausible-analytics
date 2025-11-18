@@ -1,0 +1,58 @@
+{
+  "name": "content-performance",
+  "description": "Analyze which pages/content are performing well or poorly",
+  "triggers": ["content", "pages", "posts", "blog performance", "which pages", "top pages", "worst pages"],
+  "queries": [
+    {
+      "id": "top_pages",
+      "metrics": ["visitors", "pageviews", "bounce_rate", "time_on_page"],
+      "dimensions": ["event:page"],
+      "date_range": "7d",
+      "order_by": [["visitors", "desc"]],
+      "pagination": {"limit": 20, "offset": 0}
+    },
+    {
+      "id": "high_bounce_pages",
+      "metrics": ["visitors", "bounce_rate", "time_on_page"],
+      "dimensions": ["event:page"],
+      "date_range": "7d",
+      "filters": [["is_not", "event:page", ["/"]]],
+      "order_by": [["bounce_rate", "desc"]],
+      "pagination": {"limit": 10, "offset": 0}
+    },
+    {
+      "id": "entry_pages",
+      "metrics": ["visitors", "bounce_rate", "visit_duration"],
+      "dimensions": ["visit:entry_page"],
+      "date_range": "7d",
+      "order_by": [["visitors", "desc"]],
+      "pagination": {"limit": 15, "offset": 0}
+    }
+  ],
+  "interpretation": {
+    "seo_insights": [
+      {
+        "condition": "bounce_rate > 80 && time_on_page < 20",
+        "insight": "Very high bounce with minimal engagement - likely title/content mismatch or poor UX"
+      },
+      {
+        "condition": "bounce_rate > 70 && visitors > avg_visitors",
+        "insight": "Popular page with high bounce - optimize for conversions or add clear CTAs"
+      },
+      {
+        "condition": "time_on_page > 120 && bounce_rate < 40",
+        "insight": "Strong engagement - good content that keeps users interested"
+      },
+      {
+        "condition": "pageviews / visitors > 3",
+        "insight": "High page-to-visitor ratio - users are consuming lots of content from this page"
+      }
+    ],
+    "comparisons": [
+      {
+        "metric": "bounce_rate",
+        "note": "Compare top performers vs high bounce pages to identify patterns"
+      }
+    ]
+  }
+}

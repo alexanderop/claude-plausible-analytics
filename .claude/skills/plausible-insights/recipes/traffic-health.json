@@ -1,0 +1,62 @@
+{
+  "name": "traffic-health",
+  "description": "Overall site traffic health check with period comparison",
+  "triggers": ["traffic", "visitors", "overview", "health", "how's my site", "performance"],
+  "queries": [
+    {
+      "id": "current_7d",
+      "metrics": ["visitors", "pageviews", "bounce_rate", "visit_duration", "views_per_visit"],
+      "date_range": "7d"
+    },
+    {
+      "id": "previous_7d",
+      "metrics": ["visitors", "pageviews", "bounce_rate", "visit_duration", "views_per_visit"],
+      "date_range": ["2025-11-04", "2025-11-10"]
+    },
+    {
+      "id": "today",
+      "metrics": ["visitors", "pageviews", "bounce_rate"],
+      "date_range": "day"
+    }
+  ],
+  "interpretation": {
+    "thresholds": {
+      "notable": 15,
+      "significant": 30
+    },
+    "comparisons": [
+      {
+        "metric": "visitors",
+        "baseline": "previous_7d",
+        "current": "current_7d",
+        "direction": "higher_is_better"
+      },
+      {
+        "metric": "bounce_rate",
+        "baseline": "previous_7d",
+        "current": "current_7d",
+        "direction": "lower_is_better"
+      },
+      {
+        "metric": "visit_duration",
+        "baseline": "previous_7d",
+        "current": "current_7d",
+        "direction": "higher_is_better"
+      }
+    ],
+    "seo_insights": [
+      {
+        "condition": "bounce_rate > 70 && visit_duration < 30",
+        "insight": "High bounce rate with short visit duration suggests content quality or user intent mismatch"
+      },
+      {
+        "condition": "bounce_rate > 70 && visitors_change > 30",
+        "insight": "Traffic spike with high bounce suggests low-quality traffic source or wrong audience targeting"
+      },
+      {
+        "condition": "views_per_visit < 1.5",
+        "insight": "Low pages per visit - users aren't exploring beyond landing page. Check internal linking and content relevance"
+      }
+    ]
+  }
+}
