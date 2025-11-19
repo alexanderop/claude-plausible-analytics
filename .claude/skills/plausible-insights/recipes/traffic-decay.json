@@ -1,0 +1,89 @@
+{
+  "name": "traffic-decay",
+  "description": "Identify pages losing traffic over time (content decay detection)",
+  "triggers": ["decay", "declining pages", "losing traffic", "which pages dropped", "traffic loss"],
+  "mode": "standard",
+  "queries": [
+    {
+      "id": "current_month_pages",
+      "metrics": ["visitors", "pageviews"],
+      "dimensions": ["event:page"],
+      "date_range": "30d",
+      "pagination": {"limit": 100, "offset": 0},
+      "note": "All pages with traffic in last 30 days"
+    },
+    {
+      "id": "previous_month_pages",
+      "metrics": ["visitors", "pageviews"],
+      "dimensions": ["event:page"],
+      "date_range": "dynamic_previous_30d",
+      "pagination": {"limit": 100, "offset": 0},
+      "note": "Same pages from previous 30 days for comparison"
+    },
+    {
+      "id": "organic_decline_pages",
+      "metrics": ["visitors"],
+      "dimensions": ["event:page"],
+      "filters": [["is", "visit:source", ["Google", "DuckDuckGo", "Bing"]]],
+      "date_range": "30d",
+      "pagination": {"limit": 50, "offset": 0},
+      "note": "Focus on organic traffic losses"
+    },
+    {
+      "id": "organic_decline_pages_previous",
+      "metrics": ["visitors"],
+      "dimensions": ["event:page"],
+      "filters": [["is", "visit:source", ["Google", "DuckDuckGo", "Bing"]]],
+      "date_range": "dynamic_previous_30d",
+      "pagination": {"limit": 50, "offset": 0},
+      "note": "Previous period organic for comparison"
+    }
+  ],
+  "interpretation": {
+    "decay_thresholds": {
+      "critical": "-50% or more visitors",
+      "high": "-30% to -50% visitors",
+      "moderate": "-15% to -30% visitors",
+      "normal_fluctuation": "-15% to +15%"
+    },
+    "analysis_steps": [
+      "1. Compare current_month vs previous_month for each page",
+      "2. Calculate percent change in visitors",
+      "3. Flag pages with > 30% decline AND > 50 visitors in previous period",
+      "4. Separate organic decay from overall decay",
+      "5. Prioritize by impact: (previous_visitors * decline_percent)"
+    ],
+    "seo_insights": [
+      {
+        "pattern": "organic_decline_with_stable_other_sources",
+        "cause": "Likely Google ranking drop or new competitor",
+        "action": "Check Google Search Console for position changes"
+      },
+      {
+        "pattern": "all_sources_declining",
+        "cause": "Content becoming outdated or seasonality",
+        "action": "Update content with fresh information, new data, or recent examples"
+      },
+      {
+        "pattern": "sudden_drop_all_at_once",
+        "cause": "Technical issue (404, robots.txt block, canonical)",
+        "action": "Check page accessibility and indexing status"
+      }
+    ],
+    "investigation_triggers": [
+      {
+        "when": "top_performing_page_loses_30_percent",
+        "action": "Immediate investigation - high-impact traffic loss"
+      },
+      {
+        "when": "multiple_pages_declining_simultaneously",
+        "action": "Check for site-wide technical SEO issues or algorithm update"
+      },
+      {
+        "when": "organic_only_declining",
+        "action": "SEO issue - check rankings, backlinks, and search console"
+      }
+    ]
+  },
+  "analysis_approach": "Compare two 30-day periods, identify pages with significant traffic drops, determine if organic or all sources, calculate impact priority, provide recovery recommendations"
+}

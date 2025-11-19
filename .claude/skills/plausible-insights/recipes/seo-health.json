@@ -1,0 +1,95 @@
+{
+  "name": "seo-health",
+  "description": "Comprehensive SEO health analysis focusing on organic search performance",
+  "triggers": ["seo", "organic", "search rankings", "google traffic", "seo health"],
+  "mode": "standard",
+  "queries": [
+    {
+      "id": "organic_traffic_trend",
+      "metrics": ["visitors", "pageviews", "bounce_rate", "visit_duration"],
+      "filters": [["is", "visit:source", ["Google", "DuckDuckGo", "Bing", "Brave", "Ecosia"]]],
+      "date_range": "30d",
+      "note": "Track organic search traffic over 30 days"
+    },
+    {
+      "id": "organic_entry_pages",
+      "metrics": ["visitors", "bounce_rate"],
+      "dimensions": ["visit:entry_page"],
+      "filters": [["is", "visit:source", ["Google", "DuckDuckGo", "Bing"]]],
+      "date_range": "7d",
+      "pagination": {"limit": 20, "offset": 0},
+      "note": "Top landing pages from organic search"
+    },
+    {
+      "id": "high_bounce_organic_pages",
+      "metrics": ["visitors", "bounce_rate", "visit_duration"],
+      "dimensions": ["visit:entry_page"],
+      "filters": [
+        ["is", "visit:source", ["Google", "DuckDuckGo", "Bing"]],
+        ["is", "visit:entry_page", ["*"]]
+      ],
+      "date_range": "7d",
+      "pagination": {"limit": 50, "offset": 0},
+      "note": "Filter for pages with >50 visitors and >70% bounce in analysis"
+    },
+    {
+      "id": "organic_vs_other_sources",
+      "metrics": ["visitors", "bounce_rate", "visit_duration"],
+      "dimensions": ["visit:source"],
+      "date_range": "30d",
+      "pagination": {"limit": 20, "offset": 0},
+      "note": "Compare organic vs other traffic sources"
+    }
+  ],
+  "interpretation": {
+    "red_flags": [
+      {
+        "condition": "organic_traffic_decline > 20%",
+        "severity": "critical",
+        "insight": "Significant organic traffic decline suggests ranking drops or technical SEO issues"
+      },
+      {
+        "condition": "organic_bounce_rate > 75%",
+        "severity": "high",
+        "insight": "Very high organic bounce rate indicates search intent mismatch"
+      },
+      {
+        "condition": "organic_share < 30%",
+        "severity": "medium",
+        "insight": "Organic traffic should typically be 30-50% of total traffic for healthy SEO"
+      }
+    ],
+    "seo_insights": [
+      {
+        "metric": "entry_page_diversity",
+        "good": "> 10 different entry pages in top 20",
+        "insight": "Good keyword diversity and content discoverability"
+      },
+      {
+        "metric": "landing_page_bounce",
+        "good": "< 60% average bounce for top entry pages",
+        "insight": "Content matches search intent well"
+      },
+      {
+        "metric": "organic_engagement",
+        "good": "> 90 seconds average visit duration",
+        "insight": "Users finding valuable content from search"
+      }
+    ],
+    "investigation_triggers": [
+      {
+        "when": "organic_visitors_down_20_percent",
+        "action": "Check Google Search Console for ranking drops, technical errors, or manual actions"
+      },
+      {
+        "when": "high_bounce_on_top_landing_pages",
+        "action": "Review title tags and meta descriptions - may not match search intent"
+      },
+      {
+        "when": "organic_duration_below_60s",
+        "action": "Content may be thin or not matching what users searched for"
+      }
+    ]
+  },
+  "analysis_approach": "Compare organic traffic trends, identify problem landing pages, assess overall SEO health vs other channels, provide actionable recommendations"
+}

@@ -1,0 +1,74 @@
+{
+  "name": "weekly-performance-parallel",
+  "description": "Fast weekly performance analysis using 3 parallel subagents",
+  "triggers": ["how did my blog perform", "this week", "weekly performance", "week performance", "last week", "traffic this week"],
+  "mode": "parallel_subagents",
+  "subagents": [
+    {
+      "id": "traffic_detective",
+      "name": "Traffic Analysis",
+      "model": "haiku",
+      "prompt": "You are analyzing weekly traffic changes for alexop.dev.\n\n**Your mission:** Identify what drove traffic changes this week.\n\n## Tasks\n\n1. **Get baseline metrics:**\n   - Current week (last 7 days): visitors, pageviews, bounce_rate, visit_duration, views_per_visit\n   - Previous week (7 days before that): same metrics\n   - Today: visitors, pageviews, bounce_rate\n\n2. **Traffic source comparison:**\n   - Current week: top 10 sources with visitors + bounce_rate\n   - Previous week: top 10 sources with visitors + bounce_rate\n   - Calculate which sources grew/declined and by how much\n\n3. **Calculate changes:**\n   - Overall visitor change (% and absolute)\n   - Identify sources with >15% change (notable) or >30% change (significant)\n   - Rank sources by impact on total traffic change\n\n## Output Format\n\n```\n### TRAFFIC SUMMARY\nCurrent: X visitors (previous: Y) - Z% change\nBounce: A% (previous: B%)\nToday: C visitors, D% bounce\n\n### SOURCE CHANGES (ranked by impact)\n1. [Source]: X → Y visitors (±Z%) [Impact: ±N visitors]\n2. ...\n\n### KEY FINDING\n[One sentence explaining the main driver of traffic change]\n```\n\n## Notes\n- Use ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh for all queries\n- Today is 2025-11-19, calculate date ranges dynamically\n- Focus on finding THE story behind the numbers\n- Be concise - main agent will synthesize"
+    },
+    {
+      "id": "content_analyst",
+      "name": "Content Performance",
+      "model": "haiku",
+      "prompt": "You are analyzing content performance for alexop.dev.\n\n**Your mission:** Identify which pages need attention and which are succeeding.\n\n## Tasks\n\n1. **Get top pages (last 7 days):**\n   - Top 20 pages by visitors\n   - Include: visitors, pageviews, bounce_rate, visit_duration\n   - Sort by visitors descending\n\n2. **Categorize pages:**\n   \n   **Problem Pages** (need investigation):\n   - High traffic (>50 visitors) + high bounce (>75%)\n   - OR very short duration (<30 seconds) with significant traffic\n   - Limit to top 5 by traffic\n   \n   **Success Pages** (patterns to replicate):\n   - Bounce rate <60%\n   - OR visit duration >180 seconds\n   - Limit to top 3\n   \n   **Top Traffic** (most important):\n   - Top 3 pages by visitor count regardless of metrics\n\n3. **Identify patterns:**\n   - What types of content are bouncing high?\n   - What's working well?\n   - Any outliers (98% bounce, 1s duration, etc.)?\n\n## Output Format\n\n```\n### PROBLEM PAGES (fetch these)\n1. [URL] - X visitors, Y% bounce, Zs duration - [One-line issue hypothesis]\n2. ...\n\n### SUCCESS PAGES (compare against these)\n1. [URL] - X visitors, Y% bounce, Zs duration - [Why it works]\n2. ...\n\n### PATTERNS\n- [Observation 1]\n- [Observation 2]\n\n### PAGES TO FETCH\nProblem: [URL1, URL2, URL3]\nSuccess: [URL4, URL5]\n```\n\n## Notes\n- Use ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh\n- Date range: last 7 days\n- Be surgical - identify the 3-5 pages that matter most\n- Main agent will handle the actual WebFetch calls"
+    },
+    {
+      "id": "engagement_detective",
+      "name": "Engagement Analysis",
+      "model": "haiku",
+      "prompt": "You are analyzing user engagement patterns for alexop.dev.\n\n**Your mission:** Understand engagement quality and identify opportunities.\n\n## Tasks\n\n1. **Engagement metrics comparison:**\n   - Current week: bounce_rate, visit_duration, views_per_visit\n   - Previous week: same metrics\n   - Calculate changes and assess against thresholds:\n     * Bounce: <50% good, 50-70% ok, >70% concerning\n     * Duration: >180s excellent, 90-180s good, <90s concerning  \n     * Views/visit: >2 good, 1.5-2 ok, <1.5 poor\n\n2. **Engagement by source (current week):**\n   - Top 10 sources with bounce_rate, visit_duration if available\n   - Identify best quality sources (low bounce)\n   - Identify worst quality sources (high bounce)\n\n3. **User journey analysis:**\n   - Are users exploring beyond landing page? (views_per_visit metric)\n   - Is engagement improving or declining?\n   - What does this say about internal linking?\n\n## Output Format\n\n```\n### ENGAGEMENT HEALTH\nBounce: X% (prev: Y%) - [Assessment: Excellent/Good/Concerning/Poor]\nDuration: Xs (prev: Ys) - [Assessment]\nViews/visit: X (prev: Y) - [Assessment]\n\n### TRAFFIC QUALITY BY SOURCE\nBest: [Source] - X% bounce\nWorst: [Source] - Y% bounce\n\n### KEY INSIGHTS\n1. [Main engagement finding]\n2. [Internal linking observation]\n3. [Recommendation]\n```\n\n## Notes\n- Use ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh\n- Apply thresholds from SEO knowledge base\n- Focus on actionable insights\n- Be concise - main agent synthesizes"
+    }
+  ],
+  "synthesis": {
+    "title": "Weekly Performance Report",
+    "instructions": "After all 3 subagents report back:\n\n1. **Wait for ALL reports** - do not synthesize until you have all 3\n\n2. **Fetch pages identified by content_analyst:**\n   - Fetch 3-5 problem pages in PARALLEL using WebFetch\n   - Fetch 2 success pages in PARALLEL\n   - Use prompts that analyze: hooks, CTAs, internal links, content quality\n   - Compare problem pages to success pages\n\n3. **Synthesize everything into conversational report:**\n\nStructure:\n- **Traffic Overview** (from traffic_detective): One paragraph explaining the week\n- **The Real Story** (combine all 3): What's actually happening beyond the numbers\n- **Critical Issues** (from content_analyst + page analysis): 2-3 specific problems with actual page analysis\n- **What's Working** (from page analysis): Patterns to replicate\n- **Action Plan** (specific, prioritized): \n  * Priority 1 (this week): 2-3 actions\n  * Priority 2 (next week): 2-3 actions\n\nStyle:\n- Talk like an SEO consultant, not a data dump\n- Lead with insights, not metrics\n- Provide specific recommendations based on actual page content\n- Include exact quotes/examples from fetched pages\n- Compare problem pages to success pages\n\n4. **Cross-analysis patterns to look for:**\n   - Traffic up + engagement down = low-quality source\n   - High bounce + good traffic = hook/intent problem  \n   - Low views/visit = internal linking problem\n   - Source quality divergence = targeting issue",
+    "sections": [
+      {
+        "name": "Weekly Performance Summary",
+        "source": "traffic_detective + engagement_detective"
+      },
+      {
+        "name": "Critical Issues",
+        "source": "content_analyst + page_analysis"
+      },
+      {
+        "name": "Success Patterns",
+        "source": "page_analysis"
+      },
+      {
+        "name": "Priority Actions",
+        "source": "synthesis of all reports"
+      }
+    ]
+  },
+  "interpretation": {
+    "thresholds": {
+      "traffic_change_notable": 15,
+      "traffic_change_significant": 30,
+      "bounce_rate_good": 50,
+      "bounce_rate_concerning": 70,
+      "duration_good": 90,
+      "duration_excellent": 180,
+      "views_per_visit_poor": 1.5,
+      "views_per_visit_good": 2
+    },
+    "cross_analysis": [
+      {
+        "condition": "bounce_rate > 70 && views_per_visit < 1.5",
+        "insight": "Users not exploring beyond landing page - check internal linking and content relevance"
+      },
+      {
+        "condition": "traffic_up && bounce_rate_up",
+        "insight": "New traffic source bringing low-quality visitors - investigate source changes"
+      },
+      {
+        "condition": "high_traffic_page && high_bounce",
+        "insight": "Content-intent mismatch - review opening hooks and value proposition"
+      }
+    ]
+  }
+}
