@@ -31,6 +31,21 @@ Dependencies: `jq`, `curl`, `bash`
 
 ## Tools Available
 
+### Plausible API Reference
+**CRITICAL**: Read this first when working with the API:
+```bash
+cat ./.claude/skills/plausible-insights/references/plausible-api-reference.md
+```
+
+This comprehensive reference contains:
+- **Query structure rules** (pagination syntax, filter operators, date ranges)
+- **Critical quirks** (no wildcards in `is` filters, metric mixing restrictions)
+- **Filter examples** (how to query blog posts, use regex, combine filters)
+- **Common error solutions** (400 errors, invalid filters, pagination issues)
+- **Best practices** for querying efficiently
+
+**Must read this before making API queries to avoid common errors!**
+
 ### Fast Query Script
 ```bash
 ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh '{"metrics":["visitors"],"date_range":"day"}'
@@ -43,24 +58,25 @@ Dependencies: `jq`, `curl`, `bash`
 
 Use this for all queries - it's faster than the old file-based approach.
 
-**⚠️ CRITICAL: Pagination Syntax**
+**⚠️ CRITICAL: See API Reference for Full Details**
 
-When querying with **dimensions**, you MUST use the pagination object format:
+Quick syntax reminders:
 
 ```bash
-# ✅ CORRECT - Use pagination object
+# ✅ CORRECT - Use pagination object with dimensions
 ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
   '{"metrics":["visitors","bounce_rate"],"dimensions":["event:page"],"date_range":"7d","pagination":{"limit":20,"offset":0}}'
 
-# ❌ WRONG - Will return 400 error
+# ✅ CORRECT - Filter blog posts with contains (NOT wildcards!)
 ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
-  '{"metrics":["visitors"],"dimensions":["event:page"],"date_range":"7d","limit":20}'
+  '{"metrics":["visitors"],"filters":[["contains","event:page",["/posts/"]]],"date_range":"7d","pagination":{"limit":50,"offset":0}}'
+
+# ❌ WRONG - Wildcards not supported in is operator
+./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
+  '{"filters":[["is","event:page",["/posts/*"]]],...}'
 ```
 
-**Key Rules:**
-- Always use `"pagination":{"limit":N,"offset":0}` - never use standalone `"limit":N`
-- This applies to ALL queries with dimensions (pages, sources, referrers, etc.)
-- Queries without dimensions can omit pagination (defaults to 10,000 limit)
+**When API queries fail, ALWAYS check [references/plausible-api-reference.md](references/plausible-api-reference.md) for solutions.**
 
 ### SEO Knowledge Base
 **IMPORTANT**: Always read and load the SEO knowledge base first:
@@ -251,13 +267,19 @@ Talk like a consultant, not a data dump:
 
 ## Error Handling
 
-**For detailed troubleshooting**, see [references/troubleshooting.md](references/troubleshooting.md)
+**For API query errors and limitations**, see [references/plausible-api-reference.md](references/plausible-api-reference.md)
+
+**For general troubleshooting**, see [references/troubleshooting.md](references/troubleshooting.md)
 
 Common issues:
+- **400 Bad Request (Invalid filter)**: Don't use wildcards with `is` - use `contains` or `matches` instead
+- **400 Bad Request (Pagination)**: Use `"pagination":{"limit":N,"offset":0}` not `"limit":N`
 - **No data**: Check tracking is active for that period
 - **API rate limit**: Scripts cache for 5 minutes automatically
 - **Auth error**: Verify `.env` has valid PLAUSIBLE_API_KEY
 - **Ambiguous question**: Use AskUserQuestion to clarify
+
+**Always check the API Reference first when queries fail!**
 
 ## Complete Examples
 
