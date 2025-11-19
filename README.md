@@ -1,336 +1,119 @@
 # Plausible SEO Consultant for Claude Code
 
-Your personal SEO consultant powered by Plausible Analytics. Ask questions in natural language and get comprehensive analysis, pattern detection, and actionable SEO recommendations.
+Your personal SEO consultant powered by Plausible Analytics. Ask questions in natural language and get **specific, actionable recommendations** based on your actual page content.
+
+**Quick Start:** Ask "how did my blog perform this week" and get diagnosis with specific fixes, not just metrics.
 
 ## What Makes This Different
 
-This isn't just a query tool - it's an **SEO consultant that thinks**:
+An **SEO consultant that thinks**, not just a query tool:
 
 - 🔍 **Proactive Investigation**: Automatically digs deeper when it spots anomalies
-- 📊 **Pattern Detection**: Identifies traffic spikes, engagement shifts, and content performance issues
+- 📄 **Content Analysis**: Fetches and reads your actual pages to understand root causes
 - 🎯 **SEO Expertise**: Interprets metrics through an SEO lens with actionable recommendations
 - ⚡ **Fast Analysis**: Optimized queries with no file I/O overhead
-- 🧠 **Conversational**: Presents findings like a real consultant, not raw data dumps
+- 🤖 **Parallel Subagents**: Comprehensive audits run 4 analyses simultaneously
 
-### Example Interaction
+### Example
 
-**You ask:** "How many visitors today?"
+**Asked:** "how did my blog perform this week"
 
-**Traditional tool would say:** "283 visitors"
-
-**This SEO consultant analyzes:**
-- ✅ Traffic trends: Down 16% week-over-week (notable decrease)
-- ✅ Engagement quality: Up 35% in visit duration (significant improvement!)
-- ✅ Root cause: Reddit traffic crashed 63%, Google down 30%
-- ✅ SEO interpretation: Trading quantity for quality - more engaged visitors
-- ✅ Action items: Investigate Google rankings, capitalize on Twitter momentum
-
-## Prerequisites
-
-1. **Plausible Analytics Account**
-   - Active account with tracked site(s)
-   - Stats API key ([create here](https://plausible.io/settings#api-keys))
-
-2. **System Dependencies**
-   - `curl` (pre-installed on macOS/Linux)
-   - `jq` - JSON processor
-     ```bash
-     # macOS
-     brew install jq
-
-     # Ubuntu/Debian
-     apt install jq
-     ```
-
-3. **Claude Code**
-   - This skill works with Claude Code CLI
+**Delivered:**
+1. Analyzed metrics (3 parallel queries) - spotted 74% bounce rate as the real issue
+2. Fetched and read 4 pages - found homepage has 50% bounce, blog posts have 80%
+3. Root cause: Homepage has clear pathways immediately; blog posts have internal links only at bottom
+4. Specific fixes with exact copy: Add internal links in first 3 paragraphs, move newsletter CTA from 100% scroll to 30%
+5. Expected impact: 74% → 60% bounce improvement
 
 ## Setup
 
-### 1. Get Your Plausible API Key
+**Prerequisites:**
+- Plausible Analytics account with Stats API key ([create here](https://plausible.io/settings#api-keys))
+- `jq` installed (`brew install jq` on macOS)
 
-1. Log in to [Plausible Analytics](https://plausible.io)
-2. Settings → API Keys
-3. Create new **Stats API** key
-4. Copy the key
+**Install:**
+1. Copy `.env.example` to `.env`
+2. Add your API key and site ID to `.env`
+3. Test: `bash -c 'set -a && source .env && set +a && ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh "{\"metrics\":[\"visitors\"],\"date_range\":\"day\"}"'`
 
-### 2. Configure `.env` File
+## Usage
 
-Copy the example and add your credentials:
+Ask questions naturally:
 
-```bash
-cp .env.example .env
 ```
+"how did my blog perform this week"
+→ Full analysis: metrics, page content review, specific fixes, saved report
 
-Edit `.env`:
-```bash
-PLAUSIBLE_API_KEY="your-stats-api-key-here"
-PLAUSIBLE_SITE_ID="your-site.com"  # Optional, can override per query
-
-# Optional: For self-hosted Plausible
-# PLAUSIBLE_API_URL="https://your-plausible-instance.com/api/v2/query"
-```
-
-### 3. Verify Installation
-
-Test the fast query script:
-
-```bash
-# Make script executable (if not already)
-chmod +x ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh
-
-# Test query (requires sourcing .env)
-bash -c 'set -a && source .env && set +a && \
-  ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
-  "{\"metrics\":[\"visitors\"],\"date_range\":\"day\"}" \
-  --extract "results[0].metrics[0]"'
-```
-
-Should return your visitor count for today (e.g., `284`).
-
-## Usage with Claude Code
-
-Simply ask questions naturally - the consultant will analyze and investigate automatically:
-
-### Traffic Analysis
-```
 "How's my traffic?"
-"What happened to my visitors this week?"
-"Traffic overview"
-```
+→ 7-day comparison with source investigation
 
-**What you get:**
-- 7-day comparison with previous period
-- Traffic volume and engagement trends
-- Automatic source investigation if anomalies detected
-- SEO interpretation and recommendations
-
-### Content Performance
-```
 "Which pages are performing well?"
-"Show me my top content"
-"Why is bounce rate high on /pricing?"
+→ Top pages with actual content analysis and optimization opportunities
+
+"Run a comprehensive audit"
+→ Parallel analysis (Traffic + Content + Engagement + Technical)
 ```
 
-**What you get:**
-- Top performing pages analysis
-- High bounce rate investigations
-- Entry page optimization opportunities
-- Content quality insights with SEO context
-
-### Specific Questions
-```
-"Why did traffic drop yesterday?"
-"What's driving my engagement improvement?"
-"Where are my visitors coming from?"
-```
-
-**What you get:**
-- Targeted investigation of your specific question
-- Multi-query drill-down analysis
-- Pattern recognition and root cause analysis
-- Actionable next steps
+The consultant automatically:
+- Compares periods and identifies real issues
+- Fetches and reads actual pages to find root causes
+- Provides specific fixes with expected impact
+- Saves detailed reports to `reports/` folder
 
 ## How It Works
 
-### SEO Knowledge Base
+**SEO Knowledge Base** - Comprehensive guidelines for metric interpretation, SEO patterns, investigation playbooks, and action thresholds
 
-The consultant uses a comprehensive SEO knowledge base (`.claude/skills/plausible-insights/seo-knowledge.md`) that includes:
+**Analysis Recipes** - Pre-built patterns triggered by keywords:
+- `traffic-health.json` - Site health (triggers: "traffic", "visitors", "overview")
+- `content-performance.json` - Page analysis (triggers: "content", "pages", "blog")
+- `seo-health.json` - Organic search (triggers: "SEO", "organic", "search traffic")
+- `traffic-decay.json` - Content decay (triggers: "decay", "declining")
+- `weekly-performance-parallel.json` - Comprehensive audit (triggers: "comprehensive", "full audit")
 
-- **Metric interpretation guidelines** (what's "good" vs "poor" for bounce rate, duration, etc.)
-- **SEO patterns** (viral content, intent mismatch, quality traffic signatures)
-- **Investigation playbooks** (what to check when traffic drops, engagement improves, etc.)
-- **Action thresholds** (when a change is notable vs significant)
+**Autonomous Investigation** - When changes >15% detected, automatically runs follow-up queries, applies SEO expertise, and provides recommendations
 
-### Analysis Recipes
-
-Pre-built analysis patterns for common questions:
-
-**`traffic-health.json`** - Overall site health
-- Triggers: "traffic", "visitors", "overview", "health"
-- Analyzes: 7-day trends, engagement quality, period comparison
-- Auto-investigates: Source changes if traffic shifts >15%
-
-**`content-performance.json`** - Page/content analysis
-- Triggers: "content", "pages", "blog", "top pages"
-- Analyzes: Top performers, high bounce pages, entry pages
-- Identifies: Engagement patterns and optimization opportunities
-
-### Autonomous Investigation
-
-When the consultant spots something significant (>15% change), it automatically:
-1. Runs follow-up queries to find the cause
-2. Applies SEO expertise to interpret findings
-3. Provides context-aware recommendations
-4. Presents everything conversationally
+**Page Content Analysis** - Fetches and reads actual pages to compare success vs problem patterns. Traditional tool says "Add CTAs to reduce bounce". This consultant says "Your blog posts have 80% bounce because internal links appear after 2,000 words. Add this navigation box in first 3 paragraphs: [exact copy]. Expected impact: 80% → 65% bounce."
 
 ## Advanced Usage
 
-### Direct CLI Queries
-
-For custom analysis, use the fast query script directly:
-
+**Direct CLI Queries:**
 ```bash
-# Simple query with value extraction
 bash -c 'set -a && source .env && set +a && \
   ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
-  "{\"metrics\":[\"visitors\",\"pageviews\"],\"date_range\":\"7d\"}"'
-
-# Complex query with dimensions
-bash -c 'set -a && source .env && set +a && \
-  ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
-  "{\"metrics\":[\"visitors\"],\"dimensions\":[\"visit:source\"],\"date_range\":\"30d\",\"order_by\":[[\"visitors\",\"desc\"]]}"'
+  "{\"metrics\":[\"visitors\"],\"dimensions\":[\"visit:source\"],\"date_range\":\"30d\"}"'
 ```
 
-### Query Structure
-
-```json
-{
-  "metrics": ["visitors", "pageviews", "bounce_rate", "visit_duration"],
-  "date_range": "7d",
-  "dimensions": ["event:page"],
-  "filters": [["is", "visit:country", ["US", "CA"]]],
-  "order_by": [["visitors", "desc"]],
-  "pagination": {"limit": 20, "offset": 0}
-}
-```
-
-**Common Metrics:**
-- `visitors` - Unique visitors
-- `pageviews` - Total pageviews
-- `bounce_rate` - Single-page visit percentage
-- `visit_duration` - Average session time (seconds)
-- `views_per_visit` - Pages per session
-- `time_on_page` - Average time per page (requires page filter/dimension)
-
-**Common Dimensions:**
-- `event:page` - Page URLs
-- `visit:source` - Traffic sources (Google, Reddit, Direct, etc.)
-- `visit:country_name` - Visitor countries
-- `visit:entry_page` - Landing pages
-- `visit:device` - Desktop, Mobile, Tablet
-- `time:day` - Daily time series
-
-**Date Ranges:**
-- Shortcuts: `"day"`, `"7d"`, `"30d"`, `"month"`, `"6mo"`, `"year"`
-- Custom: `["2024-01-01", "2024-01-31"]`
-- Real-time: `["2024-01-01T12:00:00+02:00", "2024-01-01T12:05:00+02:00"]`
+**Query Structure:** Metrics (`visitors`, `pageviews`, `bounce_rate`, `visit_duration`), Dimensions (`event:page`, `visit:source`, `visit:entry_page`), Date ranges (`"7d"`, `"30d"`, `["2024-01-01", "2024-01-31"]`)
 
 Full API docs: https://plausible.io/docs/stats-api
+
+## Troubleshooting
+
+**Environment Variables Not Loading** - Use `bash -c 'set -a && source .env && set +a && ./script.sh'`
+
+**Missing jq** - `brew install jq` (macOS) or `apt install jq` (Linux)
+
+**Empty Results** - Check site_id in `.env`, verify API key access, confirm data exists in Plausible dashboard
+
+**Rate Limiting** - 600 requests/hour limit. Responses cached within conversations, queries batched automatically.
 
 ## File Structure
 
 ```
 .claude/skills/plausible-insights/
-├── SKILL.md                    # Main skill definition (SEO consultant behavior)
-├── seo-knowledge.md           # SEO expertise knowledge base
-├── recipes/
-│   ├── traffic-health.json    # Traffic analysis recipe
-│   └── content-performance.json  # Content analysis recipe
-└── scripts/
-    ├── plausible-quick-query.sh   # Fast query script (no file I/O)
-    └── plausible-query.sh         # Legacy query script
-```
-
-## Troubleshooting
-
-### Environment Variables Not Loading
-
-**Error:** `PLAUSIBLE_API_KEY is not set in the environment`
-
-**Fix:** The `.env` file needs to be sourced. When using the scripts directly, use:
-```bash
-bash -c 'set -a && source .env && set +a && ./script.sh ...'
-```
-
-When using with Claude Code, the skill handles this automatically.
-
-### Missing `.env` File
-
-**Error:** File not found
-
-**Fix:**
-```bash
-cp .env.example .env
-# Edit .env with your actual API key
-```
-
-### jq Not Installed
-
-**Error:** `jq is required but not installed`
-
-**Fix:**
-```bash
-brew install jq        # macOS
-apt install jq         # Ubuntu/Debian
-```
-
-### Empty Results
-
-**Possible causes:**
-- Wrong site_id (check `.env` or query)
-- API key doesn't have access to site
-- Date range has no data
-- Verify data exists in your Plausible dashboard
-
-### Rate Limiting
-
-Plausible limits to **600 requests/hour** per API key. The consultant is efficient but if you hit limits:
-- Responses are cached within conversations
-- Batch queries combine multiple metrics
-- Consider spacing out heavy analysis sessions
-
-## Performance
-
-**Old approach (file-based):**
-- Write query → Run script → Write result → Read result
-- 3-4 file operations per query
-- ~200-300ms overhead
-
-**New approach (in-memory):**
-- Direct query execution
-- No file I/O
-- ~50ms overhead
-- Results returned directly or extracted with jq
-
-## Examples
-
-See real usage in action by asking:
-
-```
-"How's my traffic?"
-→ Full traffic health analysis with period comparison
-
-"Which content is performing best?"
-→ Top pages with engagement metrics and SEO insights
-
-"Why did traffic drop?"
-→ Autonomous investigation with root cause analysis
-
-"Show me traffic sources"
-→ Source breakdown with quality assessment
+├── SKILL.md                    # Main skill definition
+├── seo-knowledge.md            # SEO expertise knowledge base
+├── recipes/                    # Analysis patterns (traffic-health, content-performance, etc.)
+├── scripts/                    # Query utilities (plausible-quick-query.sh, etc.)
+├── references/                 # Workflows, examples, troubleshooting
+└── reports/                    # Generated analysis reports
 ```
 
 ## Contributing
 
-Improvements welcome! This skill demonstrates:
-- Recipe-based analysis patterns
-- SEO knowledge integration
-- Autonomous investigation
-- Fast query optimization
-
-Feel free to:
-- Add new analysis recipes
-- Expand SEO knowledge base
-- Optimize query patterns
-- Improve interpretation logic
+Improvements welcome! Add new analysis recipes, expand SEO knowledge base, create utility scripts, optimize query patterns. See `references/` for detailed documentation (workflows, examples, troubleshooting).
 
 ## License
 
-MIT License - Use freely with Claude Code and Plausible Analytics
-
----
-
-**Built with:** Claude Code Skills Framework
-**Powers:** SEO analysis through conversational AI
-**Backed by:** Plausible Analytics API
+MIT License - Built with Claude Code Skills Framework, powered by Plausible Analytics API
