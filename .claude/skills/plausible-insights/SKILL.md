@@ -26,33 +26,40 @@ Dependencies: `tsx`, `node >= 18`
 
 ## Tools Available
 
-### TypeScript CLI
+### TypeScript CLI - Raw Query Interface
 
-Navigate to skill directory or use absolute paths:
+The CLI is a **raw query interface** with validation. You construct queries according to the Plausible API reference.
+
 ```bash
-# From skill directory:
-npx tsx lib/cli.ts [command] [options]
+# Basic usage (query is default command):
+npx tsx lib/cli.ts '{"metrics":["visitors"],"date_range":"7d"}'
 
-# From elsewhere:
-npx tsx /absolute/path/.claude/skills/plausible-insights/lib/cli.ts [command]
+# Or explicit:
+npx tsx lib/cli.ts query '{"metrics":["visitors"],"date_range":"7d"}'
+
+# With options:
+npx tsx lib/cli.ts --no-cache '{"metrics":["visitors"],"date_range":"7d"}'
+npx tsx lib/cli.ts --extract data.results[0].metrics[0] '{"metrics":["visitors"],"date_range":"7d"}'
+
+# Cache management:
+npx tsx lib/cli.ts cache info
+npx tsx lib/cli.ts cache clear
+npx tsx lib/cli.ts cache prune
 ```
 
 **All commands return JSON:** `{"success": true, "data": {...}, "meta": {...}}`
 
-**CRITICAL:** Plausible has strict metric/dimension mixing rules. **Always read first:**
+**CRITICAL - Read API reference FIRST:**
 ```bash
 cat references/plausible-api-reference.md
 ```
 
-**High-level SEO commands:**
-```bash
-npx tsx lib/cli.ts get-top-pages --date-range 7d --limit 50
-npx tsx lib/cli.ts get-blog-performance --date-range 30d
-npx tsx lib/cli.ts get-traffic-sources --date-range 7d
-npx tsx lib/cli.ts get-content-decay --recent 7d --baseline 30d
-```
-
-Run `npx tsx lib/cli.ts --help` for all commands.
+The reference contains:
+- ✅ Valid metric/dimension combinations
+- ❌ Invalid combinations that will fail
+- Pagination syntax requirements
+- Filter operators and examples
+- Date range formats
 
 ### Reference Files
 
@@ -98,16 +105,52 @@ cat references/plausible-api-reference.md # API rules - avoid query errors
 
 ### 3. Query & Investigate
 
-**Use high-level commands for common patterns:**
+**Construct queries according to the API reference:**
+
 ```bash
-npx tsx lib/cli.ts get-top-pages --date-range 7d
-npx tsx lib/cli.ts get-blog-performance --date-range 30d
+# Get top pages by visitors
+npx tsx lib/cli.ts '{
+  "metrics": ["visitors", "pageviews"],
+  "dimensions": ["event:page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0},
+  "order_by": [["visitors", "desc"]]
+}'
+
+# Get blog posts (using filter)
+npx tsx lib/cli.ts '{
+  "metrics": ["visitors", "pageviews"],
+  "dimensions": ["event:page"],
+  "date_range": "30d",
+  "filters": [["contains", "event:page", ["/posts/"]]],
+  "pagination": {"limit": 50, "offset": 0},
+  "order_by": [["visitors", "desc"]]
+}'
+
+# Get bounce rate by landing page (use visit:entry_page!)
+npx tsx lib/cli.ts '{
+  "metrics": ["visitors", "bounce_rate", "visit_duration"],
+  "dimensions": ["visit:entry_page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}'
+
+# Compare time periods - run two separate queries
+npx tsx lib/cli.ts '{"metrics":["visitors"],"date_range":"7d"}'
+npx tsx lib/cli.ts '{"metrics":["visitors"],"date_range":["2025-01-01","2025-01-07"]}'
 ```
 
 **Auto-investigate:**
 - Changes >15% = notable, dig deeper
 - Changes >30% = significant, investigate sources/pages/timing
 - Compare time periods by running separate queries with different date ranges
+
+**Common Query Patterns:**
+- Top pages: `dimensions: ["event:page"]`, `metrics: ["visitors", "pageviews"]`
+- Bounce rate by page: `dimensions: ["visit:entry_page"]`, `metrics: ["bounce_rate"]` (NOT event:page!)
+- Traffic sources: `dimensions: ["visit:source"]`, `metrics: ["visitors", "bounce_rate"]`
+- Filter by path: `filters: [["contains", "event:page", ["/pattern/"]]]`
+- Date range: `"7d"` or `["2025-01-01", "2025-01-31"]`
 
 ### 4. Fetch Real Pages (CRITICAL)
 
