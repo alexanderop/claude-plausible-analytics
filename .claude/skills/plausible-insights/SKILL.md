@@ -34,6 +34,28 @@ Dependencies: `tsx`, `node >= 18`
 
 ### TypeScript CLI
 
+**IMPORTANT: Check your current directory first, then run commands:**
+```bash
+# Always check where you are first:
+pwd
+
+# If output shows you're already in .claude/skills/plausible-insights:
+npx tsx lib/cli.ts [command] [options]
+
+# If you're in a different directory, use the absolute path:
+npx tsx /absolute/path/to/.claude/skills/plausible-insights/lib/cli.ts [command] [options]
+
+# Or navigate to the skill directory once at the start:
+cd /absolute/path/to/.claude/skills/plausible-insights
+npx tsx lib/cli.ts [command] [options]
+```
+
+**⚠️ COMMON MISTAKES:**
+- ❌ Using `cd` when already in the skill directory (causes path errors)
+- ❌ Using relative `cd .claude/...` from within skill directory (goes too deep)
+- ❌ Not checking `pwd` before deciding how to run commands
+- ✅ Always check `pwd` first, then choose the right approach
+
 **All commands return standardized JSON:**
 ```json
 {
@@ -47,35 +69,140 @@ Dependencies: `tsx`, `node >= 18`
 
 **High-level SEO commands:**
 ```bash
-tsx lib/cli.ts get-top-pages --date-range 7d --limit 50
-tsx lib/cli.ts get-blog-performance --date-range 30d --path-pattern "/posts/"
-tsx lib/cli.ts get-traffic-sources --date-range 7d --min-visitors 10
-tsx lib/cli.ts compare-periods --current 7d --previous previous_7d
-tsx lib/cli.ts get-content-decay --recent 7d --baseline 30d --threshold 30
+npx tsx lib/cli.ts get-top-pages --date-range 7d --limit 50
+npx tsx lib/cli.ts get-blog-performance --date-range 30d --path-pattern "/posts/"
+npx tsx lib/cli.ts get-traffic-sources --date-range 7d --min-visitors 10
+npx tsx lib/cli.ts get-content-decay --recent 7d --baseline 30d --threshold 30
 ```
 
-**Low-level query for custom analysis:**
+**⚠️ CRITICAL API RESTRICTIONS - READ BEFORE QUERYING:**
+
+**Metric/Dimension Mixing Rules (MUST FOLLOW):**
+
+Plausible has strict rules about which metrics can be used with which dimensions:
+
+**Session Metrics** (cannot use with event dimensions):
+- `bounce_rate`
+- `visit_duration`
+- `views_per_visit`
+
+**Event Dimensions** (cannot use with session metrics):
+- `event:page`
+- `event:goal`
+- `event:hostname`
+
+**Visit Dimensions** (CAN use with session metrics):
+- `visit:entry_page` ← Use this instead of event:page for bounce rate!
+- `visit:exit_page`
+- `visit:source`
+- `visit:referrer`
+- `visit:device`, `visit:browser`, `visit:os`
+- `visit:country`, `visit:region`, `visit:city`
+
+**❌ THIS WILL FAIL:**
 ```bash
-tsx lib/cli.ts query '{
-  "metrics": ["visitors", "bounce_rate"],
-  "dimensions": ["event:page"],
+# WRONG - session metrics with event dimension
+npx tsx lib/cli.ts query '{
+  "metrics": ["bounce_rate", "visit_duration"],
+  "dimensions": ["event:page"]
+}'
+```
+
+**✅ CORRECT APPROACHES:**
+
+**Option 1: Use visit:entry_page for session metrics**
+```bash
+# Bounce rate by landing page
+npx tsx lib/cli.ts query '{
+  "metrics": ["visitors", "bounce_rate", "visit_duration"],
+  "dimensions": ["visit:entry_page"],
   "date_range": "7d",
-  "filters": [["contains", "event:page", ["/posts/"]]],
   "pagination": {"limit": 50, "offset": 0}
 }'
 ```
 
+**Option 2: Use event metrics with event:page**
+```bash
+# Page views and time on page (no session metrics)
+npx tsx lib/cli.ts query '{
+  "metrics": ["visitors", "pageviews", "time_on_page"],
+  "dimensions": ["event:page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}'
+```
+
+**Option 3: Run separate queries and merge results**
+```bash
+# Query 1: Session metrics by entry page
+npx tsx lib/cli.ts query '{
+  "metrics": ["bounce_rate", "visit_duration"],
+  "dimensions": ["visit:entry_page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}'
+
+# Query 2: Event metrics by page
+npx tsx lib/cli.ts query '{
+  "metrics": ["pageviews", "time_on_page"],
+  "dimensions": ["event:page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}'
+```
+
+**Common Safe Combinations:**
+
+| What You Want | Metrics | Dimension | Works? |
+|---------------|---------|-----------|--------|
+| Pages with bounce rate | `bounce_rate` | `visit:entry_page` | ✅ YES |
+| Pages with time on page | `time_on_page` | `event:page` | ✅ YES |
+| Sources with engagement | `bounce_rate`, `visit_duration` | `visit:source` | ✅ YES |
+| Devices with bounce | `bounce_rate` | `visit:device` | ✅ YES |
+| Pages with bounce rate | `bounce_rate` | `event:page` | ❌ NO |
+| Overall metrics only | `bounce_rate`, `visitors` | (none) | ✅ YES |
+
+**Other Critical Rules:**
+
+1. **Pagination syntax** - MUST use object format with dimensions:
+   - ❌ `"limit": 50`
+   - ✅ `"pagination": {"limit": 50, "offset": 0}`
+
+2. **Filter operators** - NO wildcards with `is`:
+   - ❌ `["is", "event:page", ["/posts/*"]]`
+   - ✅ `["contains", "event:page", ["/posts/"]]`
+   - ✅ `["matches", "event:page", ["^/posts/.*"]]`
+
+3. **Always check error messages** - They include suggestions for fixes
+
+**Comparing time periods:**
+```bash
+# Current period
+npx tsx lib/cli.ts query '{
+  "metrics": ["visitors", "visits", "pageviews"],
+  "date_range": "7d"
+}'
+
+# Previous period (use explicit dates)
+npx tsx lib/cli.ts query '{
+  "metrics": ["visitors", "visits", "pageviews"],
+  "date_range": ["2025-11-06", "2025-11-12"]
+}'
+
+# Then compare the results manually
+```
+
 **Extract specific values:**
 ```bash
-tsx lib/cli.ts get-top-pages --date-range 7d --extract 'data[0].visitors'
+npx tsx lib/cli.ts get-top-pages --date-range 7d --extract 'data[0].visitors'
 # Returns: 1234
 ```
 
 **Cache management:**
 ```bash
-tsx lib/cli.ts cache clear   # Clear all cache
-tsx lib/cli.ts cache prune   # Remove stale entries
-tsx lib/cli.ts cache info    # Show cache stats
+npx tsx lib/cli.ts cache clear   # Clear all cache
+npx tsx lib/cli.ts cache prune   # Remove stale entries
+npx tsx lib/cli.ts cache info    # Show cache stats
 ```
 
 **Errors include actionable suggestions:**
@@ -129,6 +256,30 @@ Pre-built patterns in `recipes/`:
 See individual recipe files for triggers and query details.
 
 ## Workflow
+
+### 0. ⚠️ BEFORE MAKING ANY QUERIES - Read This!
+
+**The #1 cause of query failures is mixing session metrics with event dimensions.**
+
+**Quick Reference Card:**
+
+```
+✅ SAFE: bounce_rate + visit:entry_page
+✅ SAFE: time_on_page + event:page
+✅ SAFE: bounce_rate + visit:source
+✅ SAFE: visitors + pageviews (no dimensions)
+
+❌ FAILS: bounce_rate + event:page
+❌ FAILS: visit_duration + event:page
+❌ FAILS: views_per_visit + event:goal
+```
+
+**Rule of thumb:**
+- Want bounce rate by page? Use `visit:entry_page` dimension
+- Want time on page? Use `event:page` dimension with `time_on_page` metric
+- Need both? Run 2 separate queries and merge the results
+
+**When in doubt:** Check the "CRITICAL API RESTRICTIONS" section above or run the query without dimensions first.
 
 ### 1. Load SEO Knowledge First
 ```bash
@@ -298,7 +449,30 @@ Talk like a consultant, not a data dump:
 
 **For general troubleshooting**, see [references/troubleshooting.md](references/troubleshooting.md)
 
-Common issues:
+### Common Setup Issues
+
+**"command not found: tsx"**
+- **Cause**: Trying to run `tsx` without `npx` or global installation
+- **Fix**: Use `npx tsx lib/cli.ts` instead of `tsx lib/cli.ts`
+- **Why**: `npx` uses the locally installed tsx from `node_modules/`
+
+**"Cannot find module" or "ENOENT" errors**
+- **Cause**: Running commands from wrong directory
+- **Fix**: Ensure you're in the skill directory before running commands
+- **Check**: Run `pwd` - should show path ending in `.claude/skills/plausible-insights`
+
+**"No such file or directory: .claude/skills/plausible-insights"**
+- **Cause**: Using relative path with `cd` in bash when already in the skill directory
+- **Fix**: If already in skill directory (check with `pwd`), just run `npx tsx lib/cli.ts ...`
+- **If not in skill directory**: Navigate there first, or use absolute paths
+
+**Dependencies not installed**
+- **Symptom**: Module errors, tsx not found even with npx
+- **Fix**: Run `npm install` from the skill directory
+- **Check**: Verify `node_modules/` directory exists
+
+### Common Query Issues
+
 - **400 Bad Request (Invalid filter)**: Don't use wildcards with `is` - use `contains` or `matches` instead
 - **400 Bad Request (Pagination)**: Use `"pagination":{"limit":N,"offset":0}` not `"limit":N`
 - **No data**: Check tracking is active for that period

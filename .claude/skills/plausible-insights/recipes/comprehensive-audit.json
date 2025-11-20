@@ -17,21 +17,21 @@
     {
       "id": "content_analyst",
       "name": "Content Performance",
-      "prompt": "You are analyzing content performance for {site_id}. Run these analyses:\n\n1. Top Performers (last 30 days):\n   - Top 20 pages by visitors\n   - Engagement metrics: bounce rate, time on page\n   - Identify what makes top content successful\n\n2. Problem Pages:\n   - Pages with >100 visitors and >80% bounce rate\n   - Pages with <20 seconds time on page\n   - High-traffic, low-engagement pages\n\n3. Entry Page Analysis:\n   - Top 15 entry pages\n   - Entry page quality (bounce, duration)\n   - SEO landing page effectiveness\n\nProvide a concise report with:\n- Best performing content (and why)\n- Problem pages requiring attention\n- Content optimization opportunities",
+      "prompt": "You are analyzing content performance for {site_id}. Run these analyses:\n\n1. Top Performers (last 30 days):\n   - Top 20 pages by visitors\n   - Engagement metrics: bounce rate, time on page\n   - Identify what makes top content successful\n\n2. Problem Pages:\n   - Pages with >100 visitors and >80% bounce rate\n   - Pages with <20 seconds time on page\n   - High-traffic, low-engagement pages\n\n3. Entry Page Analysis:\n   - Top 15 entry pages\n   - Entry page quality (bounce, duration)\n   - SEO landing page effectiveness\n\n**CRITICAL - API Restrictions:**\n- For bounce_rate/visit_duration: Use dimension \"visit:entry_page\" NOT \"event:page\"\n- For time_on_page: Use dimension \"event:page\" (this is event metric)\n- Cannot mix session metrics (bounce_rate) with event dimensions (event:page)\n- Run separate queries if you need both types of data\n\nProvide a concise report with:\n- Best performing content (and why)\n- Problem pages requiring attention\n- Content optimization opportunities",
       "queries_needed": [
-        "Top pages by visitors with engagement metrics",
-        "High bounce pages (filtered)",
-        "Entry pages with quality metrics"
+        "Top pages by visitors with time_on_page (use event:page)",
+        "Entry pages with bounce_rate (use visit:entry_page)",
+        "Merge results for complete picture"
       ]
     },
     {
       "id": "engagement_analyst",
       "name": "User Engagement",
-      "prompt": "You are analyzing user engagement patterns for {site_id}. Run these analyses:\n\n1. Engagement by Source:\n   - Bounce rate by traffic source\n   - Visit duration by source\n   - Views per visit by source\n   - Identify which sources bring quality traffic\n\n2. Engagement Trends:\n   - Compare engagement metrics: 30d current vs previous\n   - Identify improving or declining patterns\n\n3. User Journey Quality:\n   - Overall views per visit (should be >2)\n   - Average visit duration (should be >90s for blogs)\n   - Bounce rate assessment (blog: 60-70%, landing pages: <50%)\n\nProvide a concise report with:\n- Engagement health assessment\n- Best and worst quality sources\n- Navigation and internal linking opportunities",
+      "prompt": "You are analyzing user engagement patterns for {site_id}. Run these analyses:\n\n1. Engagement by Source:\n   - Bounce rate by traffic source\n   - Visit duration by source\n   - Views per visit by source\n   - Identify which sources bring quality traffic\n\n2. Engagement Trends:\n   - Compare engagement metrics: 30d current vs previous\n   - Identify improving or declining patterns\n\n3. User Journey Quality:\n   - Overall views per visit (should be >2)\n   - Average visit duration (should be >90s for blogs)\n   - Bounce rate assessment (blog: 60-70%, landing pages: <50%)\n\n**CRITICAL - API Restrictions:**\n- bounce_rate, visit_duration, views_per_visit are SESSION METRICS\n- Use them with visit dimensions: visit:source, visit:device, visit:country\n- Or use them without dimensions for overall metrics\n- NEVER mix with event:page, event:goal, or event:hostname\n\nProvide a concise report with:\n- Engagement health assessment\n- Best and worst quality sources\n- Navigation and internal linking opportunities",
       "queries_needed": [
-        "Engagement metrics by source",
-        "30-day engagement trends",
-        "User journey metrics"
+        "Engagement metrics by source (use visit:source - this works!)",
+        "30-day engagement trends (no dimensions needed)",
+        "User journey metrics (no dimensions needed)"
       ]
     },
     {
