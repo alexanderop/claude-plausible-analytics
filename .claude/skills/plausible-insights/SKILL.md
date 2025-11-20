@@ -27,9 +27,67 @@ Configuration in `.env`:
 - `PLAUSIBLE_SITE_ID` (optional, defaults in queries)
 - `PLAUSIBLE_API_URL` (optional, defaults to https://plausible.io/api/v2/query)
 
-Dependencies: `jq`, `curl`, `bash`
+Dependencies: `tsx`, `node >= 18`
 
 ## Tools Available
+
+### TypeScript CLI
+
+**All commands return standardized JSON:**
+```json
+{
+  "success": true,
+  "data": { /* results */ },
+  "meta": {
+    "timestamp": "2025-11-20T10:30:00Z"
+  }
+}
+```
+
+**High-level SEO commands:**
+```bash
+tsx lib/cli.ts get-top-pages --date-range 7d --limit 50
+tsx lib/cli.ts get-blog-performance --date-range 30d --path-pattern "/posts/"
+tsx lib/cli.ts get-traffic-sources --date-range 7d --min-visitors 10
+tsx lib/cli.ts compare-periods --current 7d --previous previous_7d
+tsx lib/cli.ts get-content-decay --recent 7d --baseline 30d --threshold 30
+```
+
+**Low-level query for custom analysis:**
+```bash
+tsx lib/cli.ts query '{
+  "metrics": ["visitors", "bounce_rate"],
+  "dimensions": ["event:page"],
+  "date_range": "7d",
+  "filters": [["contains", "event:page", ["/posts/"]]],
+  "pagination": {"limit": 50, "offset": 0}
+}'
+```
+
+**Extract specific values:**
+```bash
+tsx lib/cli.ts get-top-pages --date-range 7d --extract 'data[0].visitors'
+# Returns: 1234
+```
+
+**Cache management:**
+```bash
+tsx lib/cli.ts cache clear   # Clear all cache
+tsx lib/cli.ts cache prune   # Remove stale entries
+tsx lib/cli.ts cache info    # Show cache stats
+```
+
+**Errors include actionable suggestions:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_METRIC_DIMENSION_MIX",
+    "message": "Cannot mix session metrics with event dimensions",
+    "suggestion": "Use visit:entry_page instead of event:page for session metrics"
+  }
+}
+```
 
 ### Plausible API Reference
 **CRITICAL**: Read this first when working with the API:
@@ -45,38 +103,6 @@ This comprehensive reference contains:
 - **Best practices** for querying efficiently
 
 **Must read this before making API queries to avoid common errors!**
-
-### Fast Query Script
-```bash
-./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh '{"metrics":["visitors"],"date_range":"day"}'
-# Returns JSON directly, no file I/O
-
-# Extract specific values:
-./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh '{"metrics":["visitors"],"date_range":"day"}' --extract 'results[0].metrics[0]'
-# Returns: 284
-```
-
-Use this for all queries - it's faster than the old file-based approach.
-
-**⚠️ CRITICAL: See API Reference for Full Details**
-
-Quick syntax reminders:
-
-```bash
-# ✅ CORRECT - Use pagination object with dimensions
-./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
-  '{"metrics":["visitors","bounce_rate"],"dimensions":["event:page"],"date_range":"7d","pagination":{"limit":20,"offset":0}}'
-
-# ✅ CORRECT - Filter blog posts with contains (NOT wildcards!)
-./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
-  '{"metrics":["visitors"],"filters":[["contains","event:page",["/posts/"]]],"date_range":"7d","pagination":{"limit":50,"offset":0}}'
-
-# ❌ WRONG - Wildcards not supported in is operator
-./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
-  '{"filters":[["is","event:page",["/posts/*"]]],...}'
-```
-
-**When API queries fail, ALWAYS check [references/plausible-api-reference.md](references/plausible-api-reference.md) for solutions.**
 
 ### SEO Knowledge Base
 **IMPORTANT**: Always read and load the SEO knowledge base first:
