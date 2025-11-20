@@ -139,13 +139,13 @@ jq '.results[] | select(.dimensions[0] | startswith("/posts/"))'
 ### 5. Metrics
 
 #### Available Metrics
-- `visitors` - Unique visitors
-- `visits` - Sessions
-- `pageviews` - Page views
+- `visitors` - Unique visitors (works with both visit and event dimensions)
+- `visits` - Sessions (session metric)
+- `pageviews` - Page views (EVENT METRIC - only works with event dimensions!)
 - `events` - All events (pageviews + custom events)
-- `bounce_rate` - Bounce rate percentage (0-100)
-- `visit_duration` - Average visit duration in seconds
-- `views_per_visit` - Pages per session
+- `bounce_rate` - Bounce rate percentage (0-100) (session metric)
+- `visit_duration` - Average visit duration in seconds (session metric)
+- `views_per_visit` - Pages per session (session metric)
 - `scroll_depth` - Page scroll depth (requires `event:page` dimension)
 - `time_on_page` - Time on page in seconds (requires `event:page` dimension)
 - `percentage` - Percentage of total (requires dimensions)
@@ -153,20 +153,119 @@ jq '.results[] | select(.dimensions[0] | startswith("/posts/"))'
 
 #### Metric Requirements & Restrictions
 
-**⚠️ Cannot mix session metrics with event dimensions:**
+**⚠️ CRITICAL: Cannot mix session metrics with event dimensions**
+
+This is the **#1 cause of query failures**. Read this section carefully.
+
+**Session Metrics (cannot use with event dimensions):**
+- `bounce_rate`
+- `visit_duration`
+- `views_per_visit`
+
+**Event Metrics (cannot use with visit dimensions):**
+- `pageviews` ⚠️ CRITICAL: Despite being a common metric, pageviews ONLY works with event dimensions!
+- `time_on_page`
+- `scroll_depth`
+
+**Event Dimensions (cannot use with session metrics OR pageviews with visit dimensions):**
+- `event:page`
+- `event:goal`
+- `event:hostname`
+
+**Visit Dimensions (CAN use with session metrics):**
+- `visit:entry_page` ← Use this instead of event:page for bounce rate!
+- `visit:exit_page`
+- `visit:source`
+- `visit:referrer`
+- `visit:device`, `visit:browser`, `visit:os`
+- `visit:country`, `visit:region`, `visit:city`
+
+**❌ THIS WILL FAIL:**
 ```json
-// ❌ WRONG - session metrics with event dimension
+// WRONG - session metrics with event dimension
 {
   "metrics": ["bounce_rate", "visit_duration"],
   "dimensions": ["event:page"]
 }
 ```
 
-**Session metrics**: `bounce_rate`, `views_per_visit`, `visit_duration`
+**✅ CORRECT APPROACHES:**
 
-**Event dimensions**: `event:goal`, `event:page`, `event:hostname`
+**Option 1: Use visit:entry_page for session metrics (NO pageviews!)**
+```json
+// Bounce rate by landing page - pageviews NOT allowed here!
+{
+  "metrics": ["visitors", "bounce_rate", "visit_duration"],
+  "dimensions": ["visit:entry_page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}
+```
 
-Use **visit dimensions** instead when querying session metrics.
+**Option 2: Use event metrics with event:page**
+```json
+// Page views and time on page (no session metrics)
+{
+  "metrics": ["visitors", "pageviews", "time_on_page"],
+  "dimensions": ["event:page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}
+```
+
+**Option 3: Run separate queries and merge results**
+```bash
+# Query 1: Session metrics by entry page
+{
+  "metrics": ["bounce_rate", "visit_duration"],
+  "dimensions": ["visit:entry_page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}
+
+# Query 2: Event metrics by page
+{
+  "metrics": ["pageviews", "time_on_page"],
+  "dimensions": ["event:page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}
+```
+
+**Common Safe Combinations:**
+
+| What You Want | Metrics | Dimension | Works? |
+|---------------|---------|-----------|--------|
+| Pages with bounce rate | `bounce_rate` | `visit:entry_page` | ✅ YES |
+| Pages with time on page | `time_on_page` | `event:page` | ✅ YES |
+| Sources with engagement | `bounce_rate`, `visit_duration` | `visit:source` | ✅ YES |
+| Devices with bounce | `bounce_rate` | `visit:device` | ✅ YES |
+| Pages with bounce rate | `bounce_rate` | `event:page` | ❌ NO |
+| Overall metrics only | `bounce_rate`, `visitors` | (none) | ✅ YES |
+
+**Quick Reference Card:**
+
+```
+✅ SAFE: bounce_rate + visit:entry_page
+✅ SAFE: time_on_page + event:page
+✅ SAFE: bounce_rate + visit:source
+✅ SAFE: visitors + pageviews (no dimensions)
+✅ SAFE: pageviews + event:page
+✅ SAFE: visitors + visit:entry_page
+
+❌ FAILS: bounce_rate + event:page
+❌ FAILS: visit_duration + event:page
+❌ FAILS: views_per_visit + event:goal
+❌ FAILS: pageviews + visit:entry_page ⚠️ CRITICAL - Very common mistake!
+❌ FAILS: pageviews + visit:source
+```
+
+**Rule of thumb:**
+- Want bounce rate by page? Use `visit:entry_page` dimension (NOT event:page!)
+- Want time on page? Use `event:page` dimension with `time_on_page` metric
+- Want pageviews per page? Use `event:page` dimension (NOT visit:entry_page!)
+- Want bounce rate AND pageviews? Run 2 separate queries and merge the results
+- `visitors` is the ONLY metric that works with both visit and event dimensions
 
 ### 6. Dimensions
 

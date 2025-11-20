@@ -97,8 +97,9 @@ export async function getTopPages(options: {
   limit?: number;
   minVisitors?: number;
 }): Promise<PagePerformance[]> {
-  const response = await executeQuery({
-    metrics: ['visitors', 'pageviews'],
+  // Query 1: Get visitors and session metrics with visit:entry_page
+  const sessionResponse = await executeQuery({
+    metrics: ['visitors', 'bounce_rate', 'visit_duration'],
     dimensions: ['visit:entry_page'],
     date_range: options.dateRange,
     pagination: {
@@ -108,16 +109,42 @@ export async function getTopPages(options: {
     order_by: [['visitors', 'desc']]
   });
 
-  const pages: PagePerformance[] = response.results
+  // Query 2: Get pageviews with event:page
+  const eventResponse = await executeQuery({
+    metrics: ['pageviews'],
+    dimensions: ['event:page'],
+    date_range: options.dateRange,
+    pagination: {
+      limit: options.limit || 50,
+      offset: 0
+    }
+  });
+
+  // Build map of pageviews by page
+  const pageviewsMap = new Map<string, number>();
+  for (const result of eventResponse.results) {
+    pageviewsMap.set(result.dimensions![0], result.metrics[0]);
+  }
+
+  // Merge results
+  const pages: PagePerformance[] = sessionResponse.results
     .filter(r => r.metrics[0] >= (options.minVisitors || 0))
-    .map(r => ({
-      page: r.dimensions![0],
-      visitors: r.metrics[0],
-      pageviews: r.metrics[1],
-      bounceRate: 0, // Will need separate query for session metrics
-      avgDuration: 0,
-      quality: 'good' as const
-    }));
+    .map(r => {
+      const page = r.dimensions![0];
+      const visitors = r.metrics[0];
+      const bounceRate = r.metrics[1];
+      const avgDuration = r.metrics[2];
+      const pageviews = pageviewsMap.get(page) || visitors; // Fallback to visitors if no pageview data
+
+      return {
+        page,
+        visitors,
+        pageviews,
+        bounceRate,
+        avgDuration,
+        quality: calculateQuality(bounceRate, avgDuration)
+      };
+    });
 
   return pages;
 }
