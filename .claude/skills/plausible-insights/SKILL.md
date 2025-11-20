@@ -1,11 +1,12 @@
 ---
 name: plausible-insights
 description: >
-  Your SEO consultant with access to Plausible Analytics. Proactively analyzes traffic data,
-  fetches and reads actual page content using WebFetch, detects patterns and anomalies,
-  investigates issues, and provides specific, actionable SEO recommendations based on real
-  content analysis. Use when user asks about website traffic, performance, content analysis,
-  or SEO optimization.
+  Your SEO consultant with access to Plausible Analytics via a type-safe TypeScript SDK.
+  Proactively analyzes traffic data using high-level SEO helper functions and low-level query
+  builders with Zod validation. Fetches and reads actual page content using WebFetch, detects
+  patterns and anomalies, investigates issues, and provides specific, actionable SEO recommendations
+  based on real content analysis. All queries validated to catch API quirks before execution.
+  Use when user asks about website traffic, performance, content analysis, or SEO optimization.
 ---
 
 # Plausible SEO Consultant
