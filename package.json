@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "description": "Type-safe Plausible Analytics SDK for AI agents",
   "type": "module",
-  "main": "./lib/index.ts",
+  "main": "./.claude/skills/plausible-insights/lib/index.ts",
   "bin": {
-    "plausible-cli": "./lib/cli.ts"
+    "plausible-cli": "./.claude/skills/plausible-insights/lib/cli.ts"
   },
   "scripts": {
-    "cli": "tsx lib/cli.ts",
-    "dev": "tsx watch lib/cli.ts",
+    "cli": "bun .claude/skills/plausible-insights/lib/cli.ts",
+    "dev": "bun --watch .claude/skills/plausible-insights/lib/cli.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -18,11 +18,7 @@
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "tsx": "^4.7.0",
     "typescript": "^5.3.3",
-    "@types/node": "^20.11.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "@types/bun": "latest"
   }
 }

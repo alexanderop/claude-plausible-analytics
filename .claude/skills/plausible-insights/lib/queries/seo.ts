@@ -152,6 +152,7 @@ export async function getTopPages(options: {
 // Traffic sources with quality scoring
 export async function getTrafficSources(options: {
   dateRange: DateRange;
+  limit?: number;
   minVisitors?: number;
 }): Promise<SourceQuality[]> {
   const response = await executeQuery({
@@ -159,7 +160,7 @@ export async function getTrafficSources(options: {
     dimensions: ['visit:source'],
     date_range: options.dateRange,
     pagination: {
-      limit: 50,
+      limit: options.limit || 50,
       offset: 0
     }
   });

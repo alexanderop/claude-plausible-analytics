@@ -8,10 +8,17 @@ import { logger } from '../utils/logger.js';
 config();
 
 const API_URL = process.env.PLAUSIBLE_API_URL || 'https://plausible.io/api/v2/query';
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+export interface ExecuteOptions {
+  noCache?: boolean;
+  timeout?: number;
+  verbose?: boolean;
+}
 
 export async function executeQuery(
   params: QueryParams,
-  options: { noCache?: boolean } = {}
+  options: ExecuteOptions = {}
 ): Promise<APIResponse> {
   // 1. Validate query
   let validated: QueryParams;
@@ -55,8 +62,11 @@ export async function executeQuery(
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(validated)
-    });
+      body: JSON.stringify(validated),
+      // Bun-specific options
+      signal: AbortSignal.timeout(options.timeout ?? DEFAULT_TIMEOUT_MS),
+      verbose: options.verbose,
+    } as RequestInit);
 
     if (!response.ok) {
       const error = await response.text();
@@ -77,6 +87,13 @@ export async function executeQuery(
     if (error instanceof APIError) {
       await logger.apiError(error, validated);
       throw error;
+    }
+
+    // Handle timeout errors
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+      const timeoutError = new NetworkError(new Error(`Request timed out after ${options.timeout ?? DEFAULT_TIMEOUT_MS}ms`));
+      await logger.apiError(timeoutError, validated);
+      throw timeoutError;
     }
 
     if (error.name === 'FetchError' || error.code === 'ENOTFOUND') {

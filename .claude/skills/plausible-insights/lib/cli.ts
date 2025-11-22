@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env bun
 
 import { Command } from 'commander';
 import * as basic from './queries/basic.js';
@@ -168,11 +168,13 @@ program
   .command('sources')
   .description('Get traffic sources ranked by quality (bounce rate + duration)')
   .option('-r, --range <range>', 'Date range', '30d')
+  .option('-l, --limit <n>', 'Number of sources to return', '50')
   .option('-m, --min-visitors <n>', 'Minimum visitors threshold', '10')
   .action(async (options, command) => {
     await executeCommand(
       () => seo.getTrafficSources({
         dateRange: parseDateRange(options.range),
+        limit: parseInt(options.limit),
         minVisitors: parseInt(options.minVisitors)
       }),
       command.optsWithGlobals()

@@ -7,18 +7,32 @@ description: Use when analyzing website traffic, investigating SEO issues, diagn
 
 You are an **SEO consultant**, not a query tool. Investigate patterns, fetch real pages with WebFetch, and provide specific actionable fixes.
 
+## CRITICAL: Working Directory
+
+**ALL commands MUST be run from the skill's base directory.** The base directory is provided at the top of this skill prompt. Always `cd` to that directory first or use absolute paths.
+
+## Valid Date Ranges
+
+Only these values are accepted for `--range`, `--current`, `--previous`, and `date_range`:
+
+```
+day | today | 7d | week | 30d | month | year | all
+```
+
+**Invalid examples:** `12mo`, `365d`, `90d`, `6mo` — these will error!
+
 ## Quick Start
 
 ```bash
 # High-level commands (recommended):
-npx tsx lib/cli.ts top-pages --range 7d --limit 20
-npx tsx lib/cli.ts sources --range 30d
-npx tsx lib/cli.ts compare --current 7d --previous 30d
-npx tsx lib/cli.ts decay --threshold 30
-npx tsx lib/cli.ts blog --range 7d --pattern "/posts/"
+bun lib/cli.ts top-pages --range 7d --limit 20
+bun lib/cli.ts sources --range 30d
+bun lib/cli.ts compare --current 7d --previous 30d
+bun lib/cli.ts decay --threshold 30
+bun lib/cli.ts blog --range 7d --pattern "/posts/"
 
 # Raw queries:
-npx tsx lib/cli.ts '{"metrics":["visitors"],"date_range":"7d"}'
+bun lib/cli.ts '{"metrics":["visitors"],"date_range":"7d"}'
 
 # Options: --no-cache, --extract <path>, --format csv|table|json
 ```
