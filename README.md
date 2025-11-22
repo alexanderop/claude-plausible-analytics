@@ -8,41 +8,83 @@ Your personal SEO consultant powered by Plausible Analytics. Ask questions in na
 
 An **SEO consultant that thinks**, not just a query tool:
 
-- 🔍 **Proactive Investigation**: Automatically digs deeper when it spots anomalies
-- 📄 **Content Analysis**: Fetches and reads your actual pages to understand root causes
-- 🎯 **SEO Expertise**: Interprets metrics through an SEO lens with actionable recommendations
-- ⚡ **Fast Analysis**: Optimized queries with no file I/O overhead
-- 🤖 **Parallel Subagents**: Comprehensive audits run 4 analyses simultaneously
-
-### Example
-
-**Asked:** "how did my blog perform this week"
-
-**Delivered:**
-1. Analyzed metrics (3 parallel queries) - spotted 74% bounce rate as the real issue
-2. Fetched and read 4 pages - found homepage has 50% bounce, blog posts have 80%
-3. Root cause: Homepage has clear pathways immediately; blog posts have internal links only at bottom
-4. Specific fixes with exact copy: Add internal links in first 3 paragraphs, move newsletter CTA from 100% scroll to 30%
-5. Expected impact: 74% → 60% bounce improvement
+- **Proactive Investigation**: Automatically digs deeper when it spots anomalies
+- **Content Analysis**: Fetches and reads your actual pages to understand root causes
+- **SEO Expertise**: Interprets metrics through an SEO lens with actionable recommendations
+- **Fast Analysis**: Optimized queries with no file I/O overhead
+- **Parallel Subagents**: Comprehensive audits run 4 analyses simultaneously
 
 ## Setup
 
 **Prerequisites:**
 - Plausible Analytics account with Stats API key ([create here](https://plausible.io/settings#api-keys))
-- `jq` installed (`brew install jq` on macOS)
+- Node.js >= 18, `tsx` installed
 
 **Install:**
 1. Copy `.env.example` to `.env`
 2. Add your API key and site ID to `.env`
-3. Test: `bash -c 'set -a && source .env && set +a && ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh "{\"metrics\":[\"visitors\"],\"date_range\":\"day\"}"'`
+3. Test: `npx tsx .claude/skills/plausible-insights/lib/cli.ts top-pages --range 7d`
 
-## Usage
+## CLI Commands
 
-Ask questions naturally:
+### High-Level Commands (Recommended)
+
+```bash
+# Top pages with engagement metrics
+npx tsx lib/cli.ts top-pages --range 7d --limit 20
+
+# Traffic sources ranked by quality
+npx tsx lib/cli.ts sources --range 30d
+
+# Compare time periods
+npx tsx lib/cli.ts compare --current 7d --previous 30d
+
+# Find decaying content
+npx tsx lib/cli.ts decay --threshold 30 --pattern "/posts/"
+
+# Blog performance
+npx tsx lib/cli.ts blog --range 7d --pattern "/posts/"
+```
+
+### Raw Queries
+
+```bash
+# Execute raw API query
+npx tsx lib/cli.ts '{"metrics":["visitors"],"date_range":"7d"}'
+
+# With dimensions
+npx tsx lib/cli.ts '{
+  "metrics": ["visitors", "pageviews"],
+  "dimensions": ["event:page"],
+  "date_range": "7d",
+  "pagination": {"limit": 50, "offset": 0}
+}'
+```
+
+### Output Options
+
+```bash
+--format json    # Default, structured output
+--format csv     # Pipe-friendly, comma-separated
+--format table   # Human-readable table
+--no-cache       # Bypass 5-minute cache
+--extract path   # Extract specific value (e.g., "data.results[0]")
+```
+
+### Bash Wrapper
+
+```bash
+# Even simpler invocation
+./.claude/skills/plausible-insights/scripts/plausible top-pages --range 7d
+```
+
+## Natural Language Usage
+
+Ask questions naturally in Claude Code:
 
 ```
 "how did my blog perform this week"
-→ Full analysis: metrics, page content review, specific fixes, saved report
+→ Full analysis: metrics, page content review, specific fixes
 
 "How's my traffic?"
 → 7-day comparison with source investigation
@@ -54,65 +96,50 @@ Ask questions naturally:
 → Parallel analysis (Traffic + Content + Engagement + Technical)
 ```
 
-The consultant automatically:
-- Compares periods and identifies real issues
-- Fetches and reads actual pages to find root causes
-- Provides specific fixes with expected impact
-- Saves detailed reports to `reports/` folder
+## Architecture
 
-## How It Works
-
-**SEO Knowledge Base** - Comprehensive guidelines for metric interpretation, SEO patterns, investigation playbooks, and action thresholds
-
-**Analysis Recipes** - Pre-built patterns triggered by keywords:
-- `traffic-health.json` - Site health (triggers: "traffic", "visitors", "overview")
-- `content-performance.json` - Page analysis (triggers: "content", "pages", "blog")
-- `seo-health.json` - Organic search (triggers: "SEO", "organic", "search traffic")
-- `traffic-decay.json` - Content decay (triggers: "decay", "declining")
-- `weekly-performance-parallel.json` - Comprehensive audit (triggers: "comprehensive", "full audit")
-
-**Autonomous Investigation** - When changes >15% detected, automatically runs follow-up queries, applies SEO expertise, and provides recommendations
-
-**Page Content Analysis** - Fetches and reads actual pages to compare success vs problem patterns. Traditional tool says "Add CTAs to reduce bounce". This consultant says "Your blog posts have 80% bounce because internal links appear after 2,000 words. Add this navigation box in first 3 paragraphs: [exact copy]. Expected impact: 80% → 65% bounce."
-
-## Advanced Usage
-
-**Direct CLI Queries:**
-```bash
-bash -c 'set -a && source .env && set +a && \
-  ./.claude/skills/plausible-insights/scripts/plausible-quick-query.sh \
-  "{\"metrics\":[\"visitors\"],\"dimensions\":[\"visit:source\"],\"date_range\":\"30d\"}"'
-```
-
-**Query Structure:** Metrics (`visitors`, `pageviews`, `bounce_rate`, `visit_duration`), Dimensions (`event:page`, `visit:source`, `visit:entry_page`), Date ranges (`"7d"`, `"30d"`, `["2024-01-01", "2024-01-31"]`)
-
-Full API docs: https://plausible.io/docs/stats-api
-
-## Troubleshooting
-
-**Environment Variables Not Loading** - Use `bash -c 'set -a && source .env && set +a && ./script.sh'`
-
-**Missing jq** - `brew install jq` (macOS) or `apt install jq` (Linux)
-
-**Empty Results** - Check site_id in `.env`, verify API key access, confirm data exists in Plausible dashboard
-
-**Rate Limiting** - 600 requests/hour limit. Responses cached within conversations, queries batched automatically.
-
-## File Structure
+The skill follows Mario Zechner's CLI-first principles for minimal token usage:
 
 ```
 .claude/skills/plausible-insights/
-├── SKILL.md                    # Main skill definition
-├── seo-knowledge.md            # SEO expertise knowledge base
-├── recipes/                    # Analysis patterns (traffic-health, content-performance, etc.)
-├── scripts/                    # Query utilities (plausible-quick-query.sh, etc.)
-├── references/                 # Workflows, examples, troubleshooting
-└── reports/                    # Generated analysis reports
+├── SKILL.md                    # ~500 tokens (was ~2,000)
+├── lib/
+│   ├── cli.ts                  # 7 commands: top-pages, sources, compare, decay, blog, query, cache
+│   ├── client/                 # API client with Zod validation
+│   └── queries/                # Query builders (basic + SEO helpers)
+├── references/
+│   ├── quick-ref.md            # Common patterns (~300 tokens)
+│   ├── api/
+│   │   ├── filters.md          # Filter syntax
+│   │   └── errors.md           # Error solutions
+│   └── seo/
+│       └── thresholds.md       # Interpretation guidelines
+├── recipes/                    # Analysis patterns
+└── scripts/
+    └── plausible               # Bash wrapper
 ```
 
-## Contributing
+**Token Efficiency:**
+- Minimum load: ~500 tokens (SKILL.md only)
+- Simple queries: ~800 tokens (+ quick-ref.md)
+- Full context: ~8,000 tokens (on-demand loading)
 
-Improvements welcome! Add new analysis recipes, expand SEO knowledge base, create utility scripts, optimize query patterns. See `references/` for detailed documentation (workflows, examples, troubleshooting).
+## Key Principles
+
+1. **CLI-first**: High-level commands for common tasks, raw queries for complex ones
+2. **Progressive disclosure**: Load context only when needed
+3. **Composable outputs**: JSON/CSV/table formats for piping and chaining
+4. **Always fetch pages**: Data shows symptoms, content shows causes
+
+## Troubleshooting
+
+**Environment Variables Not Loading** - Use the bash wrapper or `source .env`
+
+**Session metrics + event:page error** - Use `visit:entry_page` for bounce_rate
+
+**Invalid pagination** - Use `{"pagination": {"limit": N, "offset": 0}}` with dimensions
+
+See `references/api/errors.md` for more solutions.
 
 ## License
 

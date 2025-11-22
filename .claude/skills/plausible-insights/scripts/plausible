@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Plausible Analytics CLI wrapper
+# Usage: ./plausible top-pages --range 7d
+#        ./plausible sources --range 30d
+#        ./plausible compare --current 7d --previous 30d
+#        ./plausible '{"metrics":["visitors"],"date_range":"7d"}'
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Load environment if .env exists
+if [[ -f "$SKILL_DIR/../../../../.env" ]]; then
+  set -a
+  source "$SKILL_DIR/../../../../.env"
+  set +a
+elif [[ -f "$SKILL_DIR/.env" ]]; then
+  set -a
+  source "$SKILL_DIR/.env"
+  set +a
+fi
+
+# Run CLI
+exec npx tsx "$SKILL_DIR/lib/cli.ts" "$@"
