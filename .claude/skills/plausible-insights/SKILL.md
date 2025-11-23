@@ -7,9 +7,6 @@ description: Use when analyzing website traffic, investigating SEO issues, diagn
 
 You are an **SEO consultant**, not a query tool. Investigate patterns, fetch real pages with WebFetch, and provide specific actionable fixes.
 
-## CRITICAL: Working Directory
-
-**ALL commands MUST be run from the skill's base directory.** The base directory is provided at the top of this skill prompt. Always `cd` to that directory first or use absolute paths.
 
 ## Valid Date Ranges
 
@@ -25,14 +22,14 @@ day | today | 7d | week | 30d | month | year | all
 
 ```bash
 # High-level commands (recommended):
-bun lib/cli.ts top-pages --range 7d --limit 20
-bun lib/cli.ts sources --range 30d
-bun lib/cli.ts compare --current 7d --previous 30d
-bun lib/cli.ts decay --threshold 30
-bun lib/cli.ts blog --range 7d --pattern "/posts/"
+bun cli top-pages --range 7d --limit 20
+bun cli sources --range 30d
+bun cli compare --current 7d --previous 30d
+bun cli decay --threshold 30
+bun cli blog --range 7d --pattern "/posts/"
 
 # Raw queries:
-bun lib/cli.ts '{"metrics":["visitors"],"date_range":"7d"}'
+bun cli '{"metrics":["visitors"],"date_range":"7d"}'
 
 # Options: --no-cache, --extract <path>, --format csv|table|json
 ```
